@@ -1,5 +1,5 @@
 import threading
-import tkinter
+from tkinter import *
 import socket               # Import socket module
 import time
 import re
@@ -17,65 +17,60 @@ while True:
         print("닉네임은 2글자 이상이어야 합니다.")
 users=[]
 
-F=tkinter.Frame
-T=tkinter.Text
-S=tkinter.Scrollbar
-L=tkinter.Label
-B=tkinter.Button
-Scale=tkinter.Scale
 class App(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
     def run(self):
-        root=tkinter.Toplevel()
+        root = Tk()
         root.title("채팅")
         root.geometry("650x630")
         root.minsize(655,632)
         #root.maxsize(650,630)
-        self.frame = F(root)
+        
+        self.frame = Frame(root)
         self.frame.pack()
         
-        self.frame1 = F(self.frame)
+        self.frame1 = Frame(self.frame)
         self.frame1.pack(side='bottom',fill='x')
                 
-        self.frame2 = F(self.frame1)
+        self.frame2 = Frame(self.frame1)
         self.frame2.pack(side='right')
 
-        self.frame3 = F(self.frame1)
+        self.frame3 = Frame(self.frame1)
         self.frame3.pack()
 
-        self.MSGL = T(self.frame,width=60,padx=2,pady=2,height=40,state="disabled")
-        self.scrollbar = S(self.frame,command=self.MSGL.yview)
+        self.MSGL = Text(self.frame,width=60,padx=2,pady=2,height=40,state="disabled")
+        self.scrollbar = Scrollbar(self.frame,command=self.MSGL.yview)
         self.MSGL.configure(yscrollcommand=self.scrollbar.set)
         self.MSGL.pack(side='left',fill='y')
         self.scrollbar.pack(side='left',fill='y')
 
-        self.UserL = T(self.frame,padx=2,pady=2)
-        self.UScroll = S(self.frame,command=self.UserL.yview)
-        self.UserL.configure(width=27,state="disabled", yscrollcommand=self.UScroll.set)
-        self.UserL.pack(side='left',fill='y')
+        self.UserList = Listbox(self.frame)
+        self.UScroll = Scrollbar(self.frame,command=self.UserList.yview)
+        self.UserList.configure(width=27,state="disabled", yscrollcommand=self.UScroll.set)
+        self.UserList.pack(side='left',fill='y')
         self.UScroll.pack(side='left',fill='y')
 
 
-        gavelImg = tkinter.PhotoImage(file='C:\\Users\\ysj\\Desktop\\python\\Networking\\gavel.gif')
-        self.sendB = B(self.frame2,image=gavelImg,command=self.BClicked)
+        gavelImg = PhotoImage(file='C:\\Users\\ysj\\Desktop\\python\\Networking\\gavel.gif')
+        self.sendB = Button(self.frame2,image=gavelImg,command=self.BClicked)
         self.sendB.pack()
 
-        self.label = L(self.frame3, text="닉네임 : "+name)
+        self.label = Label(self.frame3, text="닉네임 : "+name)
         self.label.pack(side='left',anchor='w',padx=30,fill='x')
 
-        self.volm = L(self.frame3, text='0')
+        self.volm = Label(self.frame3, text='0')
         self.volm.pack(side='left',anchor='e')
         self.volume = 100
         self.volumeS = Scale(self.frame3,orient='horizontal',showvalue=0)
         self.volumeS.set(100)
         self.volumeS.configure(command=self.setVolume)
         self.volumeS.pack(side='left',anchor='e')
-        self.volM = L(self.frame3, text='100')
+        self.volM = Label(self.frame3, text='100')
         self.volM.pack(side='left',anchor='e')
         self.volumeS.bind('<ButtonRelease-1>',self.setVolume)
         
-        self.input = T(self.frame1,height=6,padx=2,pady=2)
+        self.input = Text(self.frame1,height=6,padx=2,pady=2)
         self.input.pack(side='bottom',fill='both')
         
         self.input.bind("<Return>",self.BClickedE)
@@ -103,10 +98,9 @@ class App(threading.Thread):
     def BClickedE(self,event):
         self.sendMSG()
     def UserListA(self,Uname):
-        self.UserL.configure(state="normal")
-        self.UserL.insert("end",Uname+'\n')
-        self.UserL.configure(state="disabled")
+        self.UserList.insert(END, Uname)
         users.append(Uname)
+        
     def UserListS(self,Uname):
         self.UserL.configure(state="normal")
         for l in range(len(users)):

@@ -1,7 +1,7 @@
 import socket
 import threading
 import time
-import os
+from os import listdir
 import pyaudio
 import wave
 
@@ -9,20 +9,26 @@ s = socket.socket()
 host = socket.gethostname()
 port = 25565
 s.bind((host, port))
+
 users=[]
-updatelist = os.listdir("C:\\Users\\ysj\\Desktop\\python\\ChatClient")
+updatelist = listdir("C:\\Users\\ysj\\Desktop\\python\\ChatClient")
 
 class user():
-   def __init__(self,netInfo,name):
+   def __init__(self, netInfo, name):
       self.sock = netInfo[0]
       self.addr = netInfo[1]
       self.name = name
       self.thread = None
 
-class server(threading.Thread):
+   def __str__(self):
+      return self.name
+
+
+class Server(threading.Thread):
    def run(self):
       print("Server Started")
       s.listen(5)
+      
       while True:
          netInfo = s.accept()
          name = netInfo[0].recv(128).decode()
@@ -45,7 +51,7 @@ class chat(threading.Thread):
       self.start()
    def run(self):
       try:
-         call(self.user)
+##         call(self.user)
 ##         self.filesend("2015_11_05_0002.jpg")
          while True:
             r=self.user.sock.recv(1024).decode()
@@ -138,5 +144,5 @@ class call(threading.Thread):
 ##      File.close()
 ##      print("전송 완료")
       
-Sthread = server()
+Sthread = Server()
 Sthread.start()
