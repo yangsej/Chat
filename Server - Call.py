@@ -4,6 +4,7 @@ import time
 from os import listdir
 import pyaudio
 import wave
+import re
 
 s = socket.socket()
 host = socket.gethostname()
@@ -13,62 +14,72 @@ s.bind((host, port))
 users=[]
 updatelist = listdir("C:\\Users\\ysj\\Desktop\\python\\ChatClient")
 
-class user():
-   def __init__(self, netInfo, name):
-      self.sock = netInfo[0]
-      self.addr = netInfo[1]
-      self.name = name
-      self.thread = None
-
-   def __str__(self):
-      return self.name
-
 
 class Server(threading.Thread):
    def run(self):
-      print("Server Started")
+      print("========== Server Started ==========")
       s.listen(5)
       
       while True:
          netInfo = s.accept()
-         name = netInfo[0].recv(128).decode()
-         users.append(user(netInfo, name))
-         users[-1].sock.send(bytes("<Names>\n",'utf-8'))
-         for u in users:
-            users[-1].sock.send(bytes("<Name>"+u.name+"\n",'utf-8'))
-            if u.name!=name:
-               u.sock.send(bytes("<Name>"+name+"\n",'utf-8'))
-         users[-1].sock.send(bytes("<End>\n",'utf-8'))
-            
-         users[-1].thread = chat(users[-1])
-         print(name,"님이 접속하셨습니다",users[-1].addr)
+         recv = netInfo[0].recv(128).decode()
+         
+         recv_re = re.search("<(\w+)>(.*)<(End\w*)>\n", recv)
+         mode1 = recv_re.group(1)
+         instance = recv_re.group(2)
+         mode2 = recv_re.group(3)
+
+         if mode1 == "Name":
+            users.append(User(netInfo, instance))
 
 
-class chat(threading.Thread):
-   def __init__(self,user):
+
+class User(threading.Thread):
+   def __init__(self, netInfo, name):
       threading.Thread.__init__(self)
-      self.user = user
+      
+      self.socket = netInfo[0]
+      self.address = netInfo[1]
+      self.name = name
+
+      #유저 목록 전송
+      self.socket.send(bytes("<Names>\n",'utf-8'))
+      for u in users:
+         self.socket.send(bytes("<Name>"+u.name+"<End_Name>\n",'utf-8'))
+      self.socket.send(bytes("<End_Names>\n",'utf-8'))
+      
+      print(self.name, "님이 접속하셨습니다.", self.address)
+      
       self.start()
+
+   def __str__(self):
+      return self.name
+      
    def run(self):
       try:
 ##         call(self.user)
 ##         self.filesend("2015_11_05_0002.jpg")
          while True:
-            r=self.user.sock.recv(1024).decode()
+            recv = self.socket.recv(1024)
+            dec = recv.decode()
             msg='<Msg>'+self.user.name+": "+r+"\n"
             print(msg)
             for u in users:
                u.sock.send(bytes(msg,'utf-8'))
+               
       except:
-         self.user.sock.close()
-         outmsg=self.user.name+" 님이 퇴장하셨습니다."
-         outip=self.user.addr
-         users.remove(self.user)
-         print(outmsg,outip)
+         self.socket.close()
+         outmsg=self.name+" 님이 퇴장하셨습니다."
+         outip=self.address
+         for u in users:
+            if u.address == self.address:
+               users.remove(u)
+               break
+         print(outmsg, outip)
          if users:
             for u in users:
-               u.sock.send(bytes("<Out>"+self.user.name+"\n",'utf-8'))
-         self.user.sock.close()
+               u.socket.send(bytes("<Out>"+self.user.name+"\n",'utf-8'))
+
          
    def filesend(self,Fname):
       time.sleep(1)
