@@ -24,7 +24,7 @@ class Server(threading.Thread):
          netInfo = s.accept()
          recv = netInfo[0].recv(128).decode()
          
-         recv_re = re.search("<(\w+)>(.*)<(End\w*)>\n", recv)
+         recv_re = re.search("\<(\w+)\>(.*)\<(End\w*)\>\n", recv)
          mode1 = recv_re.group(1)
          instance = recv_re.group(2)
          mode2 = recv_re.group(3)
@@ -61,13 +61,20 @@ class User(threading.Thread):
 ##         self.filesend("2015_11_05_0002.jpg")
          while True:
             recv = self.socket.recv(1024)
+            print(help(recv.hex))
+            recv_re = re.search("\<(\w+)\>(.*)\<(End\w*)\>\n", recv)
+            mode1 = recv_re.group(1)
+            instance = recv_re.group(2)
+            mode2 = recv_re.group(3)
+            print(mode1, instance, mode2)
             dec = recv.decode()
-            msg='<Msg>'+self.user.name+": "+r+"\n"
+            print(dec)
+            msg='<Msg>'+self.name+": "+dec+"\n"
             print(msg)
             for u in users:
-               u.sock.send(bytes(msg,'utf-8'))
+               u.socket.send(bytes(msg,'utf-8'))
                
-      except:
+      except ConnectionResetError:
          self.socket.close()
          outmsg=self.name+" 님이 퇴장하셨습니다."
          outip=self.address
