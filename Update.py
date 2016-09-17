@@ -11,7 +11,7 @@ port = 25565                # Reserve a port for your service.
 
 class App(threading.Thread):
     def run(self):
-        root=Tk()
+        root = Tk()
         root.title("업데이트")
         root.geometry("600x400")
         root.minsize(600,400)
@@ -29,15 +29,15 @@ class App(threading.Thread):
         root.mainloop()
 
     def logRefresh(self, msg):
-        self.log.configure(state="normal")
-        flag=0
-        if self.scrollbar.get()[1]==1.0:
-            flag=1
-        self.log.insert("end",msg+'\n')
-        if flag==1:
-            self.log.yview_scroll(1,"units")
-            flag=0
-        self.log.configure(state="disabled")
+        self.log.configure(state=NORMAL)
+        flag=False
+        if self.scrollbar.get()[1]>=0.95:
+            flag=True
+        self.log.insert(END, msg+'\n')
+        if flag:
+            self.log.yview_moveto(1)
+            flag=False
+        self.log.configure(state=DISABLED)
 
         
 
