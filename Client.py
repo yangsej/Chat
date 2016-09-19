@@ -1,3 +1,5 @@
+version = "0.3.4"
+
 from threading import Thread
 from subprocess import Popen
 from tkinter import *
@@ -5,8 +7,6 @@ from socket import socket
 import time
 import re
 import os
-
-version = "0.3.1"
 
 name=''
 users=[]
@@ -78,7 +78,7 @@ class App(Thread):
         self.user_scroll.pack(side='left',fill='y')
 
         #전송 버튼
-        send_image = PhotoImage(file='C:\\Users\\ysj\\Desktop\\python\\Networking\\gavel.gif')
+        send_image = PhotoImage(file='resource\\gavel.gif')
         self.send_button = Button(self.frame2,image=send_image, command=self.send_Msg)
         self.send_button.pack()
         self.send_button.bind("<Return>",self.send_Msg)

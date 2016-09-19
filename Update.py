@@ -5,11 +5,11 @@ import socket               # Import socket module
 import time
 import re
 
-from os import getcwd, system
+from os import getcwd, system, remove
 import zipfile
 import subprocess
 
-
+import Client
 
 
 class App(threading.Thread):
@@ -118,12 +118,13 @@ class Network(threading.Thread):
 
                     if zipfile.is_zipfile(file_name):
                         Interface.set_name("압축 해제중...")
-                        self.unzip(file_name, getcwd()+"\\Test")
+                        self.unzip(file_name, getcwd())
                         
                     Interface.set_name("업데이트 완료")
+                    remove("Client.zip")
                     time.sleep(1)
                     subprocess.Popen(["Client.exe"])
-                    systemp("taskkill.exe /f /im Update.exe")
+                    system("taskkill.exe /f /im Update.exe")
                     return
                     
                     

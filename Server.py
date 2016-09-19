@@ -1,3 +1,5 @@
+version = "0.3.4"
+
 import socket
 import threading
 import time
@@ -7,10 +9,8 @@ import wave
 import re
 import zipfile
 
-version = "0.3.1"
-
 users=[]
-update_dir = "dist\\Client.exe"
+update_dir = ["dist\\Client.exe", "dist\\resource"]
 
 class Server(threading.Thread):
     def __init__(self):
@@ -108,10 +108,11 @@ class File_Send(threading.Thread):
         self.update = update
         
     def run(self):
-        if self.update:
-            if os.path.isdir(self.file_name):
-                self.zip(self.file_name, self.file_name+".zip")
-                self.file_name = self.file_name+".zip"
+        if len(self.file_name) > 1 or os.path.isdir(self.file_name[0]):
+            self.zip(self.file_name, self.file_name[0][self.file_name[0].rfind('\\')+1:self.file_name[0].rfind('.')]+".zip")
+            self.file_name = self.file_name[0][self.file_name[0].rfind('\\')+1:self.file_name[0].rfind('.')]+".zip"
+        elif len(self.file_name) == 1 and os.path.isfile(self.file_name[0]):
+            self.file_name = self.file_name[0]
         file_size = os.path.getsize(self.file_name)
         file = open(self.file_name, 'rb')
         
@@ -130,11 +131,17 @@ class File_Send(threading.Thread):
 
     def zip(self, file_path, file_name):
         zf = zipfile.ZipFile(file_name, 'w')
-        for (path, dir, files) in os.walk(file_path):
-            for file in files:
-                full_path = os.path.join(path, file)
-                rel_path = os.path.relpath(full_path, file_path);
-                zf.write(full_path, rel_path, zipfile.ZIP_DEFLATED)
+        for inst in file_path:
+            
+            if os.path.isdir(inst):
+                for (path, dir, files) in os.walk(inst):
+                    for file in files:
+                        full_path = os.path.join(path, file)
+                        rel_path = os.path.relpath(full_path, os.path.dirname(inst))
+                        zf.write(full_path, rel_path, zipfile.ZIP_DEFLATED)
+            elif os.path.isfile(inst):
+                rel_path = os.path.relpath(inst, os.path.dirname(inst))
+                zf.write(inst, rel_path)
         zf.close()
 
     
