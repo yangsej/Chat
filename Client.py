@@ -1,18 +1,19 @@
-import threading
+from threading import Thread
+from subprocess import Popen
 from tkinter import *
-import socket
+from socket import socket
 import time
 import re
-from os import system
+import os
 
-version = "0.01.001"
+version = "0.3.1"
 
 name=''
 users=[]
 
-class App(threading.Thread):
+class App(Thread):
     def __init__(self):
-        threading.Thread.__init__(self)
+        Thread.__init__(self)
 
         self.name_root = Tk()
         self.name_root.title("채팅")
@@ -147,19 +148,18 @@ class App(threading.Thread):
         self.volume = self.volume_scale.get()     
         
 
-class Network(threading.Thread):
+class Network(Thread):
     def __init__(self):
-        threading.Thread.__init__(self)
+        Thread.__init__(self)
         
-        self.socket = socket.socket()
+        self.socket = socket()
         host = 'Gibbs.server.ne.kr'
         port = 25565
         self.socket.connect((host, port))
         self.socket.send(bytes("<Version>"+version+"<End_Version>\n",'utf-8'))
         recent_version = re.search("\<(\w+)\>(.*)\<(End\w*)\>\n", self.socket.recv(64).decode()).group(2)
-        print(recent_version)
         if version < recent_version:
-            os.system("Update.exe")
+            Popen(["Update.exe"])
             exit()
 
     def run(self):
@@ -167,12 +167,10 @@ class Network(threading.Thread):
         while True:
             recv = self.socket.recv(1024)
             recv_de = recv.decode()
-            print(repr(recv_de))
             recv_re = re.search("\<(\w+)\>(.*)\<(End\w*)\>\n", recv_de, re.DOTALL)
             mode1 = recv_re.group(1)
             instance = recv_re.group(2)
             mode2 = recv_re.group(3)
-            print("recv_re:", mode1, instance, mode2)
 
             if mode1 == "Name":
                 Interface.add_User(instance, mode1)

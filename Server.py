@@ -1,16 +1,16 @@
 import socket
 import threading
 import time
-from os import listdir
+import os
 import pyaudio
 import wave
 import re
+import zipfile
 
-version = "0.01.001"
+version = "0.3.1"
 
 users=[]
-updatelist = listdir("C:\\Users\\ysj\\Desktop\\python\\ChatClient")
-
+update_dir = "dist\\Client.exe"
 
 class Server(threading.Thread):
     def __init__(self):
@@ -29,16 +29,6 @@ class Server(threading.Thread):
             netInfo = self.socket.accept()
             users.append(User(netInfo))
             users[-1].start()
-##            recv = netInfo[0].recv(128)
-##            recv_de = recv.decode()
-##            recv_re = re.search("\<(\w+)\>(.*)\<(End\w*)\>\n", recv_de)
-##            mode1 = recv_re.group(1)
-##            instance = recv_re.group(2)
-##            mode2 = recv_re.group(3)
-##
-##            print(mode1, instance, mode2)
-            
-
 
 class User(threading.Thread):
     def __init__(self, netInfo):
@@ -54,14 +44,15 @@ class User(threading.Thread):
       
     def run(self):
         try:
-            
-
             ##         call(self.user)
             ##         self.filesend("2015_11_05_0002.jpg")
             while True:
                 recv = self.socket.recv(1024)
                 recv_de = recv.decode()
                 print(repr(recv_de)) # 디버깅용
+                if not recv_de:
+                    self.remove_user()
+                    return
                 recv_re = re.search("<(\w+)>(.*)<(End\w*)>\n", recv_de, re.DOTALL)
                 mode1 = recv_re.group(1)
                 instance = recv_re.group(2)
@@ -82,39 +73,73 @@ class User(threading.Thread):
                     print(self.name+": "+instance)
                     for u in users:
                         u.socket.send(bytes('<'+mode1+'>'+self.name+": "+instance+'<'+mode2+'>\n','utf-8'))
-                
+                elif mode1 == "Update":
+                    update = File_Send(self.socket, update_dir, True)
+                    update.start()
+                    
                
         except ConnectionResetError:
-            self.socket.close()
             outmsg=self.name+" 님이 퇴장하셨습니다."
             outip=self.address
-            for u in users:
-                if u.address == self.address:
-                    users.remove(u)
-                    break
+            self.remove_user()
             print(outmsg, outip)
             if users:
                 for u in users:
                     u.socket.send(bytes("<Logout>"+self.name+"<End_Logout>\n",'utf-8'))
 
+        except ConnectionAbortedError:
+            self.remove_user()
+            
+    def remove_user(self):
+        self.socket.close()
+        for u in users:
+            if u.address == self.address:
+                users.remove(u)
+                break
+
          
 class File_Send(threading.Thread):
+    def __init__(self, socket, file_name='', update=False):
+        threading.Thread.__init__(self)
+        
+        self.socket = socket
+
+        self.file_name = file_name
+        self.update = update
+        
     def run(self):
-        time.sleep(1)
-        Fsize = os.path.getsize(Fname)
-        File = open(Fname,'rb')
-        print("파일 전송:",Fname,Fsize,self.user.name,self.user.addr)
-        self.user.sock.send(bytes("<File>"+Fname+"\n<Size>"+str(Fsize)+"\n","utf-8"))
-        Fdata = File.read(1024**2)
-        time.sleep(1)
-        while Fdata:
-            self.user.sock.send(Fdata)
-            Fdata = File.read(1024**2)
-        time.sleep(1)
-        self.user.sock.send(bytes("<End>\n",'utf-8'))
-        File.close()
+        if self.update:
+            if os.path.isdir(self.file_name):
+                self.zip(self.file_name, self.file_name+".zip")
+                self.file_name = self.file_name+".zip"
+        file_size = os.path.getsize(self.file_name)
+        file = open(self.file_name, 'rb')
+        
+        print("파일 전송:", self.file_name, file_size)
+        self.socket.send(bytes("<File>"+self.file_name[self.file_name.rfind('\\')+1:]+"<End_File>\n", "utf-8"))
+        self.socket.send(bytes("<Size>"+str(file_size)+"<End_Size>\n","utf-8"))
+        
+        self.socket.send(bytes("<Data>\n","utf-8"))
+        file_data = file.read(1024)
+        while file_data:
+            self.socket.send(file_data)
+            file_data = file.read(1024)
+        self.socket.send(bytes("\n<End_Data>\n",'utf-8'))
+        file.close()
         print("전송 완료")
-               
+
+    def zip(self, file_path, file_name):
+        zf = zipfile.ZipFile(file_name, 'w')
+        for (path, dir, files) in os.walk(file_path):
+            for file in files:
+                full_path = os.path.join(path, file)
+                rel_path = os.path.relpath(full_path, file_path);
+                zf.write(full_path, rel_path, zipfile.ZIP_DEFLATED)
+        zf.close()
+
+    
+
+
 ####class call(threading.Thread):
 ####    def __init__(self,user):
 ####        threading.Thread.__init__(self)
